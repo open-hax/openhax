@@ -24,3 +24,7 @@ node_modules/
 *.swp
 *.swo
 *~
+
+# Shadow-CLJS build caches
+.shadow-cljs/
+packages/opencode-reactant/.shadow-cljs/

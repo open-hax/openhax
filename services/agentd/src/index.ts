@@ -7,6 +7,7 @@ import { FastifyRequest } from "fastify";
 import { bus } from "./events.js";
 import { listIssues, listPRs, openPR, commentPR, getIssueDetail, getPRDetail } from "./github.js";
 import { getRepoInfo, getWorktreeConfig, createWorktree, runTaskInWorktree, pushBranch, listWorktrees } from "./git.js";
+import { listFiles } from "./fs.js";
 
 const PORT = Number(process.env.WEB_PORT ?? 8787);
 const REPO = process.env.REPO_SLUG!;
@@ -33,6 +34,16 @@ app.get("/api/issues/:id", async (req, rep) => {
 
 app.get("/api/repo", async (req, rep) => {
   return getRepoInfo();
+});
+
+app.get("/api/files", async (req, rep) => {
+  const relPath = (req.query as any).path ?? ".";
+  try {
+    return await listFiles(relPath);
+  } catch (err) {
+    rep.status(400);
+    return { error: String(err) };
+  }
 });
 
 app.get("/api/prs", async (req, rep) => {
