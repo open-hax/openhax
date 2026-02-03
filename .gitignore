@@ -28,3 +28,6 @@ node_modules/
 # Shadow-CLJS build caches
 .shadow-cljs/
 packages/opencode-reactant/.shadow-cljs/
+
+# Clj-kondo cache
+.clj-kondo/.cache/
