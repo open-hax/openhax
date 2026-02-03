@@ -28,22 +28,21 @@
     // }
 
   },
-  // "lsp": {
-  //   "clojure": {
-  //     "command": [
-  //       "clojure-lsp",
-  //       "listen"
-  //     ],
-  //     "extensions": [
-  //       ".clj",
-  //       ".cljs",
-  //       ".cljc",
-  //       ".edn"
-  //     ]
-  //   }
-  // },
+  "lsp": {
+    "clojure": {
+      "command": [
+        "clojure-lsp",
+        "listen"
+      ],
+      "extensions": [
+        ".clj",
+        ".cljs",
+        ".cljc",
+        ".edn"
+      ]
+    }
+  },
   "tools":{
-    "clj*":true,
     "chrome*":true
   }
 }

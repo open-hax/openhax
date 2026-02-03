@@ -11,10 +11,23 @@
       {:name ::home :params {}}
       
       (= (first parts) "issues")
-      {:name ::issue :params {:id (second parts)}}
+      (if-let [id (second parts)]
+        {:name ::issue :params {:id id}}
+        {:name ::issues :params {}})
       
       (= (first parts) "prs")
-      {:name ::pr :params {:id (second parts)}}
+      (if-let [id (second parts)]
+        {:name ::pr :params {:id id}}
+        {:name ::prs :params {}})
+
+      (= (first parts) "worktrees")
+      {:name ::worktrees :params {}}
+
+      (= (first parts) "files")
+      {:name ::files :params {}}
+
+      (= (first parts) "events")
+      {:name ::events :params {}}
       
       :else
       {:name ::not-found :params {}})))
@@ -22,6 +35,11 @@
 (defn navigate! [page-name & params]
   (let [path (case page-name
                ::home "/"
+               ::issues "/issues"
+               ::prs "/prs"
+               ::worktrees "/worktrees"
+               ::files "/files"
+               ::events "/events"
                ::issue (str "/issues/" (first params))
                ::pr (str "/prs/" (first params))
                "/")]

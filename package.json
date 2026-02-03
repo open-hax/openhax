@@ -14,6 +14,10 @@
     "dev": "concurrently \"pnpm --filter agentd dev\" \"pnpm --filter opencode-reactant dev\"",
     "build": "pnpm --filter opencode-reactant build && pnpm --filter agentd build",
     "typecheck": "echo \"skip typecheck\"",
+    "docs:ts": "pnpm --filter @openhax/agentd doc",
+    "docs:cljs": "clojure -X:codox",
+    "docs": "pnpm docs:ts && pnpm docs:cljs",
+    "coverage": "pnpm --filter agentd coverage",
     "start": "pnpm --filter agentd start",
     "clean": "pnpm --recursive clean",
     "install:all": "pnpm install && pnpm --recursive install"
