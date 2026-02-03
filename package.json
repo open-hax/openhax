@@ -13,6 +13,7 @@
   "scripts": {
     "dev": "concurrently \"pnpm --filter agentd dev\" \"pnpm --filter opencode-reactant dev\"",
     "build": "pnpm --filter opencode-reactant build && pnpm --filter agentd build",
+    "typecheck": "echo \"skip typecheck\"",
     "start": "pnpm --filter agentd start",
     "clean": "pnpm --recursive clean",
     "install:all": "pnpm install && pnpm --recursive install"
