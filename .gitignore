@@ -34,3 +34,4 @@ packages/opencode-reactant/.shadow-cljs/
 .clj-kondo/.cache/
 .lsp/
 packages/opencode-reactant/.clj-kondo/.cache/
+packages/opencode-reactant/.lsp/
