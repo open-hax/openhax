@@ -372,27 +372,26 @@ const resolveMethodNotAllowed = (res: ServerResponse): void => {
   sendText(res, 405, "method not allowed\n");
 };
 
-const stripCwd = (value: string): string => {
-  const cwd = process.cwd();
-  const relative = path.relative(cwd, value);
+const stripBase = (baseDir: string, value: string): string => {
+  const relative = path.relative(baseDir, value);
   return relative.startsWith("..") ? value : relative;
 };
 
-const serializeTask = (task: KanbanTask): KanbanTask => ({
-  ...task,
-  sourcePath: stripCwd(task.sourcePath)
-});
-
-const serializeBoard = (snapshot: KanbanBoardSnapshot): KanbanBoardSnapshot => ({
-  ...snapshot,
-  columns: snapshot.columns.map((col) => ({
-    ...col,
-    tasks: col.tasks.map(serializeTask)
-  }))
-});
-
 export const startKanbanServer = async ({ tasksDir, host, port }: KanbanServerOptions): Promise<void> => {
   const resolvedHost = host ?? "127.0.0.1";
+
+  const serializeTask = (task: KanbanTask): KanbanTask => ({
+    ...task,
+    sourcePath: stripBase(tasksDir, task.sourcePath)
+  });
+
+  const serializeBoard = (snapshot: KanbanBoardSnapshot): KanbanBoardSnapshot => ({
+    ...snapshot,
+    columns: snapshot.columns.map((col) => ({
+      ...col,
+      tasks: col.tasks.map(serializeTask)
+    }))
+  });
 
   const server = http.createServer(async (req, res) => {
     try {
