@@ -28,3 +28,7 @@ node_modules/
 # Shadow-CLJS build caches
 .shadow-cljs/
 packages/opencode-reactant/.shadow-cljs/
+
+# Playwright artifacts
+packages/kanban/test-results/
+packages/kanban/playwright-report/

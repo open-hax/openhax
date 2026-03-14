@@ -391,7 +391,15 @@ const stripBase = (baseDir: string, value: string): string => {
   return relative.startsWith("..") ? value : relative;
 };
 
-export const startKanbanServer = async ({ tasksDir, host, port }: KanbanServerOptions): Promise<void> => {
+export type StartedKanbanServer = Readonly<{
+  server: http.Server;
+  host: string;
+  port: number;
+  url: string;
+  tasksDir: string;
+}>;
+
+export const startKanbanServer = async ({ tasksDir, host, port }: KanbanServerOptions): Promise<StartedKanbanServer> => {
   const resolvedHost = host ?? "127.0.0.1";
 
   const serializeTask = (task: KanbanTask): KanbanTask => ({
@@ -461,6 +469,18 @@ export const startKanbanServer = async ({ tasksDir, host, port }: KanbanServerOp
     server.listen(port, resolvedHost, () => resolve());
   });
 
-  console.log(`Kanban UI running at http://${resolvedHost}:${port}`);
+  const address = server.address();
+  const resolvedPort = typeof address === "object" && address ? address.port : port;
+  const url = `http://${resolvedHost}:${resolvedPort}`;
+
+  console.log(`Kanban UI running at ${url}`);
   console.log(`Tasks: ${tasksDir}`);
+
+  return {
+    server,
+    host: resolvedHost,
+    port: resolvedPort,
+    url,
+    tasksDir
+  };
 };
