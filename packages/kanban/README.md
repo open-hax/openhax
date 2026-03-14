@@ -17,6 +17,16 @@ pnpm --filter @openhax/kanban test
 pnpm --filter @openhax/kanban exec node dist/cli.js --help
 ```
 
+## Local web UI
+
+```bash
+pnpm --filter @openhax/kanban build
+pnpm --filter @openhax/kanban exec node dist/cli.js serve --tasks-dir ./tasks --port 8787
+# open http://127.0.0.1:8787
+```
+
+Drag cards between columns to update their `status:` frontmatter (and, when using a `tasks/<status>/` folder tree, files will be moved to the matching status folder when safe).
+
 ## Trello Setup
 
 1. Copy `packages/kanban/.env.example` values into your environment.

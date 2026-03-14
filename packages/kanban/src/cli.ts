@@ -4,6 +4,7 @@ import path from "node:path";
 
 import { buildBoardSnapshot, writeBoardSnapshot } from "./board.js";
 import { loadConfig, loadEnvironment, resolveConfigPathValue } from "./config.js";
+import { startKanbanServer } from "./server.js";
 import { syncTasksToTrello } from "./sync.js";
 import { loadTasks } from "./tasks.js";
 import { TrelloClient } from "./trello-client.js";
@@ -22,6 +23,7 @@ const showHelp = (): void => {
 USAGE
   openhax-kanban board snapshot [--tasks-dir <path>] [--out <path>] [--config <path>]
   openhax-kanban sync trello [--tasks-dir <path>] [--board-url <url>] [--board-id <id>] [--dry-run] [--archive-missing] [--config <path>]
+  openhax-kanban serve [--tasks-dir <path>] [--host <host>] [--port <port>] [--config <path>]
 
 FLAGS
   --config <path>         Path to openhax.kanban.json
@@ -31,12 +33,19 @@ FLAGS
   --board-id <id>         Trello board short id or id
   --dry-run               Print sync plan without mutating Trello
   --archive-missing       Archive Trello cards with known UUIDs that are missing locally
+  --host <host>           Host to bind the local web UI (default: 127.0.0.1)
+  --port <port>           Port to bind the local web UI (default: 8787)
   --help                  Show this help
 `);
 };
 
 const parseArgs = (argv: string[]): ParsedCli => {
-  const [command, subcommand, ...rest] = argv;
+  const [command, maybeSubcommand, ...tail] = argv;
+
+  const hasSubcommand = typeof maybeSubcommand === "string" && maybeSubcommand.length > 0 && !maybeSubcommand.startsWith("--");
+  const subcommand = hasSubcommand ? maybeSubcommand : undefined;
+  const rest = hasSubcommand ? tail : [maybeSubcommand, ...tail].filter((value): value is string => typeof value === "string");
+
   const flags: Record<string, FlagValue> = {};
 
   for (let index = 0; index < rest.length; index += 1) {
@@ -62,6 +71,15 @@ const parseArgs = (argv: string[]): ParsedCli => {
 const readStringFlag = (flags: Record<string, FlagValue>, name: string): string | undefined => {
   const value = flags[name];
   return typeof value === "string" ? value : undefined;
+};
+
+const readNumberFlag = (flags: Record<string, FlagValue>, name: string): number | undefined => {
+  const value = readStringFlag(flags, name);
+  if (!value) {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 };
 
 const resolveTasksDir = (flagValue: string | undefined, configDir: string, configValue?: string): string => {
@@ -165,6 +183,18 @@ const main = async (): Promise<void> => {
     });
 
     printSyncPlan(result, dryRun);
+    return;
+  }
+
+  if (parsedCli.command === "serve") {
+    const host = readStringFlag(parsedCli.flags, "host") ?? "127.0.0.1";
+    const port = readNumberFlag(parsedCli.flags, "port") ?? 8787;
+
+    await startKanbanServer({
+      tasksDir,
+      host,
+      port
+    });
     return;
   }
 
