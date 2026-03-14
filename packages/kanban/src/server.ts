@@ -61,6 +61,10 @@ const indexHtml = html`<!doctype html>
       * { box-sizing: border-box; }
       body {
         margin: 0;
+        height: 100vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
         font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
         background: radial-gradient(1200px 800px at 20% 0%, rgba(124,92,255,0.18), transparent 60%), var(--bg);
         color: var(--text);
@@ -109,20 +113,27 @@ const indexHtml = html`<!doctype html>
       button:hover { border-color: rgba(124,92,255,0.55); }
       .wrap {
         padding: 12px;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
       }
       .board {
         display: grid;
         grid-auto-flow: column;
         grid-auto-columns: minmax(260px, 1fr);
+        grid-template-rows: 1fr;
         gap: 10px;
+        height: 100%;
         overflow-x: auto;
-        padding-bottom: 18px;
+        overflow-y: hidden;
+        overscroll-behavior: contain;
       }
       .col {
         background: linear-gradient(180deg, rgba(18,18,26,0.95), rgba(18,18,26,0.78));
         border: 1px solid var(--border);
         border-radius: 14px;
-        min-height: 74vh;
+        height: 100%;
+        min-height: 0;
         display: flex;
         flex-direction: column;
       }
@@ -154,6 +165,9 @@ const indexHtml = html`<!doctype html>
         flex-direction: column;
         gap: 8px;
         flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overscroll-behavior: contain;
       }
       .card {
         background: linear-gradient(180deg, rgba(16,16,24,0.95), rgba(16,16,24,0.75));
