@@ -20,12 +20,12 @@
      [:h3.text-sm.font-medium "Error"]
      [:div.text-sm error]]]])
 
-(defn back-button []
+(defn back-button [target]
   [:button.flex.items-center.text-blue-600.hover:text-blue-800.mb-4.transition-colors
-   {:on-click #(router/navigate! ::router/issues)}
+   {:on-click #(router/navigate! target)}
    [:svg.w-4.h-4.mr-2 {:viewBox "0 0 20 20" :fill "currentColor"}
     [:path {:fill-rule "evenodd" :d "M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" :clip-rule "evenodd"}]]
-   "Back to Issues"])
+   "Back"])
 
 (defn issue-content [data]
   [:div.flex-1.overflow-y-auto.p-6
@@ -35,8 +35,8 @@
      [:div.flex.items-center.justify-between.mb-4
       [:h1.text-2xl.font-bold.text-gray-900 (:title data)]
       [:span.px-3.py-1.text-sm.font-semibold.rounded-full
-       {:class (if (= (:state data) "open") 
-                 "bg-green-100.text-green-800" 
+       {:class (if (= (:state data) "open")
+                 "bg-green-100.text-green-800"
                  "bg-gray-100.text-gray-800")}
        (:state data)]]
      [:div.text-sm.text-gray-500.mb-4
@@ -44,7 +44,7 @@
       [:span.mx-2 "•"]
       [:span (str "Created by " (:user data))]]
      [:div.text-gray-700.whitespace-pre-wrap (:body data)]]
-    
+
     ;; Comments section
     [:div.space-y-4
      (doall
@@ -56,10 +56,7 @@
            [:div
             [:div.text-sm.font-medium.text-gray-900 (:user comment)]
             [:div.text-xs.text-gray-500 (:created_at comment)]]]
-          [:div.text-gray-700.whitespace-pre-wrap (:body comment)]]))]
-
-  ]
-  ]
+          [:div.text-gray-700.whitespace-pre-wrap (:body comment)]]))]]])
 
 (defn pr-content [data]
   [:div.flex-1.overflow-y-auto.p-6
@@ -69,8 +66,8 @@
      [:div.flex.items-center.justify-between.mb-4
       [:h1.text-2xl.font-bold.text-gray-900 (:title data)]
       [:span.px-3.py-1.text-sm.font-semibold.rounded-full
-       {:class (if (= (:state data) "open") 
-                 "bg-green-100.text-green-800" 
+       {:class (if (= (:state data) "open")
+                 "bg-green-100.text-green-800"
                  "bg-red-100.text-red-800")}
        (:state data)]]
      [:div.text-sm.text-gray-500.mb-4
@@ -78,7 +75,7 @@
       [:span.mx-2 "•"]
       [:span (str "Created by " (:user data))]]
      [:div.text-gray-700.whitespace-pre-wrap (:body data)]]
-    
+
     ;; Files changed section
     [:div.bg-white.rounded-lg.shadow-sm.p-6.mb-6
      [:h2.text-lg.font-semibold.text-gray-900.mb-4 "Files Changed"]
@@ -90,7 +87,7 @@
           [:div.text-sm.font-medium.text-gray-900 (:filename file)]
           [:div.text-xs.text-gray-500 (str "+" (:additions file) " -" (:deletions file))]]
          [:button.text-blue-600.hover:text-blue-800.text-sm "View"]]])]
-    
+
     ;; Comments section
     [:div.space-y-4
      (doall
@@ -102,17 +99,16 @@
            [:div
             [:div.text-sm.font-medium.text-gray-900 (:user comment)]
             [:div.text-xs.text-gray-500 (:created_at comment)]]]
-          [:div.text-gray-700.whitespace-pre-wrap (:body comment)]]))]
-]
-]
- 
+          [:div.text-gray-700.whitespace-pre-wrap (:body comment)]]))]]])
+
 ;; ===== Main Detail Components =====
 
 (defn issue-detail []
   (let [issue-id (get-in @router/current-page [:params :id])
         data (r/atom nil)
         loading? (r/atom true)
-        error (r/atom nil)]
+        error (r/atom nil)
+        stop-watch (atom nil)]
     (r/create-class
       {:component-did-mount
        (fn []
@@ -122,27 +118,77 @@
          (let [repo (:repo @S/!state)
                cache-key (str repo "/" issue-id)
                cached-data (get @gh/issue-detail-cache cache-key)]
-           (js/console.log "Issue detail - repo:" repo "issue-id:" issue-id "cache-key:" cache-key "cached:" cached-data)
            (if cached-data
              (do
-               (reset! data cached-data)
+               (when (:error cached-data)
+                 (reset! error (:error cached-data)))
+               (reset! data (when-not (:error cached-data) cached-data))
                (reset! loading? false))
              (do
-               (gh/fetch-issue-detail! issue-id)
-               (add-watch gh/issue-detail-cache
-                          [:issue-detail issue-id]
-                          (fn [_ _ _ new-cache]
-                            (let [cached-data (get new-cache cache-key)]
-                              (when cached-data
-                                (remove-watch gh/issue-detail-cache [:issue-detail issue-id])
-                                (reset! data cached-data)
-                                (reset! loading? false)))))))))
+               (reset! stop-watch
+                       (gh/watch-cache-once!
+                         gh/issue-detail-cache cache-key
+                         (fn [cached]
+                           (if (:error cached)
+                             (reset! error (:error cached))
+                             (reset! data cached))
+                           (reset! loading? false))))
+               (gh/fetch-issue-detail! issue-id)))))
+       :component-will-unmount
+       (fn []
+         (when-let [stop @stop-watch]
+           (stop)))
        :reagent-render
        (fn []
          [:div.h-screen.bg-gray-50.flex.flex-col
-          [back-button]
+          [back-button ::router/issues]
           (cond
             @loading? [loading-spinner]
             @error [error-message @error]
             @data [issue-content @data]
+            :else nil)])})))
+
+(defn pr-detail []
+  (let [pr-id (get-in @router/current-page [:params :id])
+        data (r/atom nil)
+        loading? (r/atom true)
+        error (r/atom nil)
+        stop-watch (atom nil)]
+    (r/create-class
+      {:component-did-mount
+       (fn []
+         (reset! loading? true)
+         (reset! error nil)
+         (reset! data nil)
+         (let [repo (:repo @S/!state)
+               cache-key (str repo "/" pr-id)
+               cached-data (get @gh/pr-detail-cache cache-key)]
+           (if cached-data
+             (do
+               (when (:error cached-data)
+                 (reset! error (:error cached-data)))
+               (reset! data (when-not (:error cached-data) cached-data))
+               (reset! loading? false))
+             (do
+               (reset! stop-watch
+                       (gh/watch-cache-once!
+                         gh/pr-detail-cache cache-key
+                         (fn [cached]
+                           (if (:error cached)
+                             (reset! error (:error cached))
+                             (reset! data cached))
+                           (reset! loading? false))))
+               (gh/fetch-pr-detail! pr-id)))))
+       :component-will-unmount
+       (fn []
+         (when-let [stop @stop-watch]
+           (stop)))
+       :reagent-render
+       (fn []
+         [:div.h-screen.bg-gray-50.flex.flex-col
+          [back-button ::router/prs]
+          (cond
+            @loading? [loading-spinner]
+            @error [error-message @error]
+            @data [pr-content @data]
             :else nil)])})))
